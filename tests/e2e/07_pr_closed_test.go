@@ -49,20 +49,22 @@ func testPRClosedNotMerged(t *testing.T) {
 
 	// Step 4: Poll until solution appears.
 	t.Run("Solution appears for Bounty B", func(t *testing.T) {
+		var solutions []interface{}
 		pollUntil(t, "solution for Bounty B to appear", 10, 1*time.Second, func() bool {
 			status, _, body := httpGetArray(t, fmt.Sprintf("/api/bounties/%d/solutions", int(bountyBID)))
 			if status != 200 || len(body) < 1 {
 				return false
 			}
 			sol := asObj(body[0])
-			return jsonFloat(sol, "prNumber") == 30 && jsonString(sol, "status") == "submitted"
+			if jsonFloat(sol, "prNumber") == 30 && jsonString(sol, "status") == "submitted" {
+				solutions = body
+				return true
+			}
+			return false
 		})
 
-		// Final assertion after poll succeeds.
-		status, _, body := httpGetArray(t, fmt.Sprintf("/api/bounties/%d/solutions", int(bountyBID)))
-		require.Equal(t, 200, status)
-		require.Len(t, body, 1)
-		sol := asObj(body[0])
+		require.Len(t, solutions, 1)
+		sol := asObj(solutions[0])
 		assert.Equal(t, float64(30), jsonFloat(sol, "prNumber"))
 		assert.Equal(t, "submitted", jsonString(sol, "status"))
 	})
@@ -82,19 +84,23 @@ func testPRClosedNotMerged(t *testing.T) {
 
 	// Step 6: Verify bounty is STILL open (retry to let processing complete).
 	t.Run("Bounty B still open after PR closed without merge", func(t *testing.T) {
+		var bounty map[string]interface{}
 		pollUntil(t, "bounty B still open after close event", 3, 1*time.Second, func() bool {
 			status, _, body := httpGet(t, fmt.Sprintf("/api/bounties/%d", int(bountyBID)))
 			if status != 200 {
 				return false
 			}
-			return jsonString(body, "status") == "open"
+			if jsonString(body, "status") == "open" {
+				bounty = body
+				return true
+			}
+			return false
 		})
 
-		status, _, body := httpGet(t, fmt.Sprintf("/api/bounties/%d", int(bountyBID)))
-		require.Equal(t, 200, status)
-		assert.Equal(t, "open", jsonString(body, "status"))
-		assert.Equal(t, amountBefore, jsonString(body, "amount"))
-		assert.Equal(t, float64(0), jsonFloat(body, "closedAt"))
+		require.NotNil(t, bounty)
+		assert.Equal(t, "open", jsonString(bounty, "status"))
+		assert.Equal(t, amountBefore, jsonString(bounty, "amount"))
+		assert.Equal(t, float64(0), jsonFloat(bounty, "closedAt"))
 	})
 
 	// Step 7: Solution stays "submitted".

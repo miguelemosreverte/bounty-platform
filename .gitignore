@@ -6,6 +6,8 @@ frontend/.env.local
 # Go
 bin/
 backend/pkg/bindings/
+backend/server
+backend/mcp
 
 # Foundry
 contracts/out/

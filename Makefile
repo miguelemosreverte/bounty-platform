@@ -37,11 +37,18 @@ generate: contracts-build ## Generate Go bindings from contract ABIs
 	chmod +x scripts/generate-bindings.sh
 	./scripts/generate-bindings.sh
 
-backend-build: ## Build Go backend
+backend-build: ## Build Go backend (server + MCP)
 	cd backend && go build -o ../bin/server ./cmd/server
+	cd backend && go build -o ../bin/gitbusters-mcp ./cmd/mcp
 
 backend-run: ## Run Go backend
 	cd backend && go run ./cmd/server
+
+mcp-build: ## Build MCP server binary
+	cd backend && go build -o ../bin/gitbusters-mcp ./cmd/mcp
+
+mcp-run: ## Run MCP server on stdio (for testing)
+	cd backend && go run ./cmd/mcp
 
 frontend-dev: ## Run Next.js dev server
 	cd frontend && npm run dev

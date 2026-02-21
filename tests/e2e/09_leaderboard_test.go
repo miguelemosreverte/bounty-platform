@@ -46,19 +46,22 @@ func testLeaderboard(t *testing.T) {
 
 	// Step 4: Poll until solution appears.
 	t.Run("Solution appears for Bounty C", func(t *testing.T) {
+		var solutions []interface{}
 		pollUntil(t, "solution for Bounty C to appear", 10, 1*time.Second, func() bool {
 			status, _, body := httpGetArray(t, fmt.Sprintf("/api/bounties/%d/solutions", int(bountyCID)))
 			if status != 200 || len(body) < 1 {
 				return false
 			}
 			sol := asObj(body[0])
-			return jsonFloat(sol, "prNumber") == 40 && jsonString(sol, "status") == "submitted"
+			if jsonFloat(sol, "prNumber") == 40 && jsonString(sol, "status") == "submitted" {
+				solutions = body
+				return true
+			}
+			return false
 		})
 
-		status, _, body := httpGetArray(t, fmt.Sprintf("/api/bounties/%d/solutions", int(bountyCID)))
-		require.Equal(t, 200, status)
-		require.Len(t, body, 1)
-		sol := asObj(body[0])
+		require.Len(t, solutions, 1)
+		sol := asObj(solutions[0])
 		assert.Equal(t, float64(40), jsonFloat(sol, "prNumber"))
 		assert.Equal(t, "submitted", jsonString(sol, "status"))
 	})
@@ -78,18 +81,22 @@ func testLeaderboard(t *testing.T) {
 
 	// Step 6: Poll until Bounty C closes.
 	t.Run("Bounty C closes after merge", func(t *testing.T) {
+		var bounty map[string]interface{}
 		pollUntil(t, "Bounty C to close", 10, 1*time.Second, func() bool {
 			status, _, body := httpGet(t, fmt.Sprintf("/api/bounties/%d", int(bountyCID)))
 			if status != 200 {
 				return false
 			}
-			return jsonString(body, "status") == "closed" && jsonString(body, "amount") == "0"
+			if jsonString(body, "status") == "closed" && jsonString(body, "amount") == "0" {
+				bounty = body
+				return true
+			}
+			return false
 		})
 
-		status, _, body := httpGet(t, fmt.Sprintf("/api/bounties/%d", int(bountyCID)))
-		require.Equal(t, 200, status)
-		assert.Equal(t, "closed", jsonString(body, "status"))
-		assert.Equal(t, "0", jsonString(body, "amount"))
+		require.NotNil(t, bounty)
+		assert.Equal(t, "closed", jsonString(bounty, "status"))
+		assert.Equal(t, "0", jsonString(bounty, "amount"))
 	})
 
 	// Step 7: Verify leaderboard has >= 4 entries.

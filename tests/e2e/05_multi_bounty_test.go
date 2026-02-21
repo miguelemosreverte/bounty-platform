@@ -44,22 +44,21 @@ func testMultiBounty(t *testing.T) {
 		assert.Equal(t, 200, status)
 	})
 
-	t.Run("Poll until 5 bounties appear", func(t *testing.T) {
+	t.Run("Poll until 5 bounties appear and capture IDs", func(t *testing.T) {
+		var bounties []interface{}
 		pollUntil(t, "waiting for 5 bounties (2 seed + 3 new)", 30, 1*time.Second, func() bool {
 			status, _, body := httpGetArray(t, "/api/bounties")
-			return status == 200 && len(body) == 5
+			if status == 200 && len(body) == 5 {
+				bounties = body
+				return true
+			}
+			return false
 		})
-	})
 
-	t.Run("Capture bounty IDs", func(t *testing.T) {
-		status, _, body := httpGetArray(t, "/api/bounties")
-		require.Equal(t, 200, status)
-		require.Len(t, body, 5)
-
-		bountyAID = jsonFloat(asObj(body[2]), "id")
-		bountyBID = jsonFloat(asObj(body[3]), "id")
-		bountyCID = jsonFloat(asObj(body[4]), "id")
-
+		require.Len(t, bounties, 5)
+		bountyAID = jsonFloat(asObj(bounties[2]), "id")
+		bountyBID = jsonFloat(asObj(bounties[3]), "id")
+		bountyCID = jsonFloat(asObj(bounties[4]), "id")
 		require.NotZero(t, bountyAID)
 		require.NotZero(t, bountyBID)
 		require.NotZero(t, bountyCID)
