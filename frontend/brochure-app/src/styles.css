@@ -1,0 +1,5 @@
+/* Import production globals (which includes @import "tailwindcss" + theme tokens) */
+@import "../../src/app/globals.css";
+
+/* Tell Tailwind v4 to also scan the production source directory for classes */
+@source "../../src";
