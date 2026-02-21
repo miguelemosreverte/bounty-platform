@@ -152,7 +152,7 @@ func (c *Client) ListBounties() ([]*models.BountyResponse, error) {
 	}
 
 	var bounties []*models.BountyResponse
-	for i := uint64(1); i < nextID.Uint64(); i++ {
+	for i := uint64(1); i <= nextID.Uint64(); i++ {
 		b, err := c.GetBounty(i)
 		if err != nil {
 			continue

@@ -27,11 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <Web3Provider>
           <Navbar />
-          <main className="mx-auto max-w-7xl px-6 py-8">
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
             {children}
           </main>
         </Web3Provider>

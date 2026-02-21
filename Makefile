@@ -1,4 +1,4 @@
-.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo
+.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo test-e2e test
 
 # Default env file
 -include .env
@@ -110,6 +110,12 @@ stop: ## Stop all background services
 	@-pkill -f "next dev" 2>/dev/null || true
 	@-pkill -f "smee --url" 2>/dev/null || true
 	@echo "All services stopped"
+
+test-e2e: ## Run Hurl E2E tests (starts anvil + backend automatically)
+	@chmod +x scripts/test-e2e.sh
+	@./scripts/test-e2e.sh
+
+test: contracts-test test-e2e ## Run all tests (contracts + E2E)
 
 clean: ## Clean build artifacts
 	rm -rf contracts/out contracts/cache contracts/broadcast bin/
