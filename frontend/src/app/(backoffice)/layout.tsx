@@ -29,13 +29,13 @@ const icons = {
 const developerLinks: SidebarLink[] = [
   { href: '/developer', label: 'Overview', icon: icons.overview },
   { href: '/developer/dashboard', label: 'Dashboard', icon: icons.dashboard },
-  { href: '/developer/bounties', label: 'Bounties', icon: icons.bounties },
+  { href: '/developer/bounties', label: 'Tasks', icon: icons.bounties },
 ];
 
 const maintainerLinks: SidebarLink[] = [
   { href: '/maintainer', label: 'Overview', icon: icons.overview },
   { href: '/maintainer/dashboard', label: 'Dashboard', icon: icons.dashboard },
-  { href: '/maintainer/bounties', label: 'My Bounties', icon: icons.bounties },
+  { href: '/maintainer/bounties', label: 'My Tasks', icon: icons.bounties },
 ];
 
 const enterpriseLinks: SidebarLink[] = [

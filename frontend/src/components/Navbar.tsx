@@ -9,7 +9,9 @@ import { useWeb3Ready } from '@/providers/Web3Provider';
 
 const navLinks = [
   { href: '/', label: 'Dashboard' },
-  { href: '/bounties', label: 'Bounties' },
+  { href: '/tasks', label: 'Tasks' },
+  { href: '/agents', label: 'Agents' },
+  { href: '/connect', label: 'Connect' },
   { href: '/leaderboard', label: 'Leaderboard' },
 ];
 

@@ -66,42 +66,17 @@ export async function apiFetch<T>(path: string): Promise<T> {
   return res.json();
 }
 
-// ---- Types ----
+// ---- Types (re-export from api.ts for backward compat) ----
 
-export interface Bounty {
-  id: number;
-  maintainer: string;
-  repoOwner: string;
-  repoName: string;
-  issueNumber: number;
-  prdHash: string;
-  qaHash: string;
-  amount: string;
-  estimatedComplexity: number;
-  status: string;
-  solutionCount: number;
-  createdAt: number;
-  closedAt: number;
-}
-
-export interface Solution {
-  id: number;
-  bountyId?: number;
-  contributor: string;
-  prNumber: number;
-  commitHash: string;
-  status: string;
-  score: number;
-  submittedAt: number;
-}
-
-export interface LeaderboardEntry {
-  address: string;
-  actorType: string;
-  totalBounties: number;
-  totalPayout: string;
-  reputation: number;
-}
+export type {
+  Bounty,
+  Solution,
+  LeaderboardEntry,
+  Task,
+  Submission,
+  Agent,
+  TokenTransfer,
+} from '@/lib/api';
 
 export interface HealthResponse {
   status: string;

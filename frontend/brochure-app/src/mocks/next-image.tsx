@@ -21,7 +21,7 @@ interface ImageProps {
 
 // Map known static asset paths to imported URLs
 const assetMap: Record<string, string> = {
-  '/mascot.jpeg': mascotUrl,
+  '/mascot.jpeg': mascotUrl as unknown as string,
 };
 
 function Image({ src, alt, width, height, className, fill, style, ...rest }: ImageProps) {

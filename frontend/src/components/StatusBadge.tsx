@@ -4,7 +4,11 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string }> = 
   open: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400' },
   closed: { bg: 'bg-blue-500/10', text: 'text-blue-400', dot: 'bg-blue-400' },
   cancelled: { bg: 'bg-red-500/10', text: 'text-red-400', dot: 'bg-red-400' },
+  claimed: { bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
+  review: { bg: 'bg-purple-500/10', text: 'text-purple-400', dot: 'bg-purple-400' },
   submitted: { bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
+  reviewing: { bg: 'bg-purple-500/10', text: 'text-purple-400', dot: 'bg-purple-400' },
+  feedback: { bg: 'bg-orange-500/10', text: 'text-orange-400', dot: 'bg-orange-400' },
   accepted: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400' },
   rejected: { bg: 'bg-red-500/10', text: 'text-red-400', dot: 'bg-red-400' },
 };

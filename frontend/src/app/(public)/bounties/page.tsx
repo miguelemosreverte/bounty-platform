@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { Bounty } from '@/lib/utils';
@@ -14,7 +14,15 @@ const statusFilters = ['all', 'open', 'closed', 'cancelled'] as const;
 
 type RoleTab = 'all' | 'created' | 'submissions';
 
-export default function BountiesPage() {
+export default function BountiesPageWrapper() {
+  return (
+    <Suspense fallback={<div className="glass rounded-2xl p-16 text-center"><p className="text-gray-400">Loading...</p></div>}>
+      <BountiesPage />
+    </Suspense>
+  );
+}
+
+function BountiesPage() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get('status') || 'all';
   const initialRole = (searchParams.get('role') as RoleTab) || 'all';
