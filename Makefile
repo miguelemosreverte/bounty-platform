@@ -1,4 +1,4 @@
-.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo test-e2e test
+.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo seed test-e2e test
 
 # Default env file
 -include .env
@@ -103,6 +103,10 @@ dev-all: ## Start all services in background
 demo: ## Run full bounty lifecycle demo against playground repo
 	@chmod +x scripts/demo.sh
 	@./scripts/demo.sh
+
+seed: ## Seed Anvil with demo bounties, solutions, and leaderboard data
+	@chmod +x scripts/seed.sh
+	@./scripts/seed.sh
 
 stop: ## Stop all background services
 	@-pkill -f "anvil --host" 2>/dev/null || true
