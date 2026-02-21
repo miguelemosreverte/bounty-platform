@@ -136,6 +136,25 @@ func httpGetRaw(t *testing.T, path string) (int, http.Header, []byte) {
 	return resp.StatusCode, resp.Header, body
 }
 
+// httpPostJSON sends a JSON POST and returns status + parsed JSON object body.
+func httpPostJSON(t *testing.T, path string, body string) (int, http.Header, map[string]interface{}) {
+	t.Helper()
+	req, err := http.NewRequest("POST", baseURL+path, strings.NewReader(body))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	start := time.Now()
+	resp, err := http.DefaultClient.Do(req)
+	dur := time.Since(start)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	recordRequest(t, "POST", path, body, map[string]string{"Content-Type": "application/json"}, resp.StatusCode, respBody, dur)
+	var result map[string]interface{}
+	_ = json.Unmarshal(respBody, &result)
+	return resp.StatusCode, resp.Header, result
+}
+
 // httpPost sends a POST with the given body string and headers.
 func httpPost(t *testing.T, path string, body string, headers map[string]string) (int, http.Header, []byte) {
 	t.Helper()

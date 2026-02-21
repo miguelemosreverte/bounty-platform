@@ -3,343 +3,415 @@ package e2e
 const htmlReportTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E2E Test Report — Bounty Platform</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0d1117; color: #c9d1d9; padding: 2rem;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitBusters — E2E Test Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            headline: ['"Playfair Display"', 'Georgia', 'serif'],
+            body: ['"Source Serif 4"', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['"SF Mono"', 'Monaco', '"Cascadia Code"', 'Consolas', 'monospace'],
+          },
+          colors: {
+            wsj: {
+              bg: '#FBF9F6',
+              cream: '#F5F1EB',
+              rule: '#C4B9A7',
+              accent: '#0274B6',
+              dark: '#111111',
+              muted: '#666666',
+              highlight: '#E8DFD0',
+              red: '#9E1B1D',
+              green: '#1A6B3C',
+            }
+          }
         }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: #f0f6fc; }
-        .subtitle { color: #8b949e; margin-bottom: 2rem; }
+      }
+    }
+  </script>
+  <style>
+    body { background: #FBF9F6; }
+    .section-rule {
+      border: none;
+      border-top: 1px solid #C4B9A7;
+      margin: 2rem 0;
+    }
+    .double-rule {
+      border: none;
+      border-top: 3px double #111;
+      margin: 1.5rem 0;
+    }
+    .data-callout {
+      background: #F5F1EB;
+      border-left: 4px solid #0274B6;
+    }
+    .chart-container { position: relative; width: 100%; max-width: 520px; max-height: 240px; margin: 0 auto; }
+    .chart-container-doughnut { position: relative; max-width: 280px; max-height: 260px; margin: 0 auto; }
 
-        /* Summary cards */
-        .summary {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem;
-        }
-        .stat {
-            background: #161b22; border-radius: 12px; padding: 1.25rem; text-align: center;
-            border: 1px solid #30363d;
-        }
-        .stat h2 { font-size: 2rem; margin-bottom: 0.25rem; }
-        .stat p { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat.passed h2 { color: #3fb950; }
-        .stat.failed h2 { color: #f85149; }
-        .stat.total h2 { color: #58a6ff; }
-        .stat.duration h2 { color: #bc8cff; font-size: 1.3rem; }
-        .stat.requests h2 { color: #d29922; }
+    /* Suite toggle */
+    .suite-header { cursor: pointer; transition: background 0.15s; }
+    .suite-header:hover { background: #F5F1EB; }
+    .chevron { transition: transform 0.2s; display: inline-block; }
+    .chevron.open { transform: rotate(90deg); }
 
-        /* Charts */
-        .charts {
-            display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;
-        }
-        .chart-card {
-            background: #161b22; border-radius: 12px; padding: 1.5rem;
-            border: 1px solid #30363d;
-        }
-        .chart-card h3 { color: #f0f6fc; margin-bottom: 1rem; font-size: 1rem; }
+    /* Method badges */
+    .method-pill {
+      display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 700; font-family: 'SF Mono', Monaco, Consolas, monospace;
+      letter-spacing: 0.03em;
+    }
+    .method-pill.get { background: rgba(2,116,182,0.12); color: #0274B6; }
+    .method-pill.post { background: rgba(158,27,29,0.10); color: #9E1B1D; }
+    .method-pill.put { background: rgba(102,102,102,0.12); color: #666; }
+    .method-pill.delete { background: rgba(158,27,29,0.10); color: #9E1B1D; }
+    .method-pill.mcp { background: rgba(26,107,60,0.12); color: #1A6B3C; }
 
-        /* Section header */
-        .section-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-        .section-header h2 { color: #f0f6fc; font-size: 1.3rem; }
-        .toggle-all {
-            background: #21262d; border: 1px solid #30363d; color: #8b949e;
-            padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;
-            font-size: 0.8rem; font-family: inherit;
-        }
-        .toggle-all:hover { color: #c9d1d9; border-color: #484f58; }
+    /* Status code badges */
+    .status-code {
+      display: inline-block; padding: 0.1rem 0.35rem; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 700; font-family: 'SF Mono', Monaco, Consolas, monospace;
+    }
+    .status-2xx { background: rgba(26,107,60,0.12); color: #1A6B3C; }
+    .status-4xx { background: rgba(158,27,29,0.10); color: #9E1B1D; }
+    .status-5xx { background: rgba(158,27,29,0.20); color: #9E1B1D; }
 
-        /* Suite sections */
-        .suite-section { margin-bottom: 0.5rem; }
-        .suite-header {
-            display: flex; align-items: center; gap: 0.75rem;
-            padding: 0.75rem 1rem; cursor: pointer;
-            background: #161b22; border-radius: 8px; border: 1px solid #30363d;
-            transition: background 0.15s;
-        }
-        .suite-header:hover { background: #1c2129; }
-        .chevron {
-            color: #484f58; font-size: 0.7rem; transition: transform 0.2s;
-            display: inline-block; width: 1rem; text-align: center;
-        }
-        .chevron.open { transform: rotate(90deg); }
-        .status-pill {
-            padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem;
-            font-weight: 700; letter-spacing: 0.05em;
-        }
-        .status-pill.pass { background: rgba(63,185,80,0.15); color: #3fb950; }
-        .status-pill.fail { background: rgba(248,81,73,0.15); color: #f85149; }
-        .suite-name { color: #f0f6fc; font-weight: 600; font-size: 0.95rem; }
-        .suite-meta { color: #484f58; font-size: 0.8rem; margin-left: auto; }
+    /* Timeline */
+    .timeline-item { position: relative; }
+    .timeline-item:not(:last-child) .timeline-line {
+      position: absolute; left: 11px; top: 28px;
+      width: 2px; bottom: 0; background: #E8DFD0;
+    }
+    .step-circle {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #F5F1EB; border: 2px solid #C4B9A7;
+      color: #666; font-size: 0.6rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-weight: 700; z-index: 1;
+      font-family: 'SF Mono', Monaco, Consolas, monospace;
+    }
 
-        .suite-body { padding: 0.75rem 0 0.75rem 1.5rem; }
+    /* Body expand/collapse */
+    .body-label {
+      color: #666; font-size: 0.7rem; cursor: pointer;
+      user-select: none; display: inline-flex; align-items: center; gap: 0.25rem;
+    }
+    .body-label:hover { color: #111; }
+    .body-label .arrow {
+      font-size: 0.55rem; display: inline-block; transition: transform 0.15s;
+    }
+    .body-label .arrow.open { transform: rotate(90deg); }
+    .body-content {
+      background: #fff; border: 1px solid #C4B9A7; border-radius: 4px;
+      padding: 0.75rem; margin-top: 0.25rem; font-size: 0.7rem;
+      color: #333; overflow-x: auto; white-space: pre-wrap;
+      word-break: break-word; max-height: 500px; overflow-y: auto;
+      font-family: 'SF Mono', Monaco, Consolas, monospace;
+      line-height: 1.5;
+    }
 
-        /* Timeline */
-        .timeline-item {
-            display: flex; gap: 0.75rem; position: relative;
-            padding-bottom: 0.75rem;
-        }
-        .timeline-item:not(:last-child) .timeline-line {
-            position: absolute; left: 11px; top: 28px;
-            width: 2px; bottom: 0; background: #21262d;
-        }
-        .step-circle {
-            width: 24px; height: 24px; border-radius: 50%;
-            background: #21262d; color: #8b949e; font-size: 0.65rem;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; font-weight: 700; z-index: 1;
-        }
-        .step-content { flex: 1; min-width: 0; }
-        .step-header {
-            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-            line-height: 1.6;
-        }
-
-        /* Method badges */
-        .method-pill {
-            padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.7rem;
-            font-weight: 700; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-        }
-        .method-pill.get { background: rgba(88,166,255,0.15); color: #58a6ff; }
-        .method-pill.post { background: rgba(210,153,34,0.15); color: #d29922; }
-        .method-pill.put { background: rgba(188,140,255,0.15); color: #bc8cff; }
-        .method-pill.delete { background: rgba(248,81,73,0.15); color: #f85149; }
-
-        .path {
-            color: #c9d1d9; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-            font-size: 0.85rem; background: rgba(110,118,129,0.1); padding: 0.1rem 0.35rem;
-            border-radius: 3px;
-        }
-
-        /* Status code badges */
-        .status-code {
-            padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem;
-            font-weight: 700; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-        }
-        .status-2xx { background: rgba(63,185,80,0.15); color: #3fb950; }
-        .status-4xx { background: rgba(210,153,34,0.15); color: #d29922; }
-        .status-5xx { background: rgba(248,81,73,0.15); color: #f85149; }
-
-        .step-duration { color: #484f58; font-size: 0.75rem; }
-        .subtest-name {
-            color: #bc8cff; font-size: 0.7rem; background: rgba(188,140,255,0.08);
-            padding: 0.1rem 0.35rem; border-radius: 3px;
-        }
-
-        /* Request headers */
-        .req-headers {
-            display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;
-        }
-        .header-tag {
-            background: #0d1117; border: 1px solid #21262d; border-radius: 4px;
-            padding: 0.1rem 0.4rem; font-size: 0.65rem; color: #8b949e;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-        }
-
-        /* Request/Response bodies */
-        .body-section { margin-top: 0.4rem; }
-        .body-label {
-            color: #484f58; font-size: 0.75rem; cursor: pointer;
-            user-select: none; display: inline-flex; align-items: center; gap: 0.3rem;
-        }
-        .body-label:hover { color: #8b949e; }
-        .body-label .arrow {
-            font-size: 0.6rem; display: inline-block; transition: transform 0.15s;
-        }
-        .body-label .arrow.open { transform: rotate(90deg); }
-        .body-content {
-            background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
-            padding: 0.75rem; margin-top: 0.3rem; font-size: 0.75rem;
-            color: #8b949e; overflow-x: auto; white-space: pre-wrap;
-            word-break: break-word; max-height: 500px; overflow-y: auto;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-            line-height: 1.5;
-        }
-
-        .empty-state { color: #484f58; font-style: italic; padding: 1rem; font-size: 0.85rem; }
-        .footer { text-align: center; color: #30363d; margin-top: 3rem; font-size: 0.8rem; }
-    </style>
+    @media print {
+      .no-print { display: none; }
+      body { font-size: 11px; }
+      .chart-container { max-height: 200px; margin-bottom: 2rem !important; }
+      .chart-container-doughnut { max-width: 220px; max-height: 200px; }
+      .suite-section { break-inside: avoid; page-break-inside: avoid; }
+      h2, h3 { break-after: avoid; page-break-after: avoid; }
+      td, th { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+    }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <h1>E2E Test Report</h1>
-        <p class="subtitle">Bounty Platform &mdash; {{.Timestamp}}</p>
+<body class="text-wsj-dark">
 
-        <div class="summary">
-            <div class="stat total"><h2>{{.TotalSuites}}</h2><p>Suites</p></div>
-            <div class="stat passed"><h2>{{.Passed}}</h2><p>Passed</p></div>
-            <div class="stat failed"><h2>{{.Failed}}</h2><p>Failed</p></div>
-            <div class="stat duration"><h2>{{.TotalDuration}}</h2><p>Duration</p></div>
-            <div class="stat requests"><h2>{{.TotalRequests}}</h2><p>HTTP Requests</p></div>
-        </div>
-
-        <div class="charts">
-            <div class="chart-card">
-                <h3>Duration per Suite</h3>
-                <canvas id="durationChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Pass / Fail</h3>
-                <canvas id="resultChart"></canvas>
-            </div>
-        </div>
-
-        <div class="section-header">
-            <h2>Suite Timeline</h2>
-            <button class="toggle-all" onclick="toggleAll()">Expand All</button>
-        </div>
-
-        {{range $i, $suite := .SuiteDetails}}
-        <div class="suite-section">
-            <div class="suite-header" onclick="toggleSuite('suite-{{$i}}')">
-                {{if eq $i 0}}<span class="chevron open" id="chevron-suite-{{$i}}">&#9654;</span>{{else}}<span class="chevron" id="chevron-suite-{{$i}}">&#9654;</span>{{end}}
-                <span class="status-pill {{$suite.StatusClass}}">{{$suite.Status}}</span>
-                <span class="suite-name">{{$suite.Name}}</span>
-                <span class="suite-meta">{{$suite.TotalReqs}} requests &middot; {{$suite.DurationStr}}</span>
-            </div>
-            {{if eq $i 0}}<div class="suite-body" id="suite-{{$i}}">{{else}}<div class="suite-body" id="suite-{{$i}}" style="display:none;">{{end}}
-                {{if $suite.Requests}}
-                {{range $j, $req := $suite.Requests}}
-                <div class="timeline-item">
-                    <div class="timeline-line"></div>
-                    <div class="step-circle">{{$req.Step}}</div>
-                    <div class="step-content">
-                        <div class="step-header">
-                            <span class="method-pill {{$req.MethodClass}}">{{$req.Method}}</span>
-                            <code class="path">{{$req.Path}}</code>
-                            <span class="status-code {{$req.StatusClass}}">{{$req.StatusCode}}</span>
-                            <span class="step-duration">{{$req.DurationStr}}</span>
-                            {{if $req.SubTest}}<span class="subtest-name">{{$req.SubTest}}</span>{{end}}
-                        </div>
-                        {{if $req.Headers}}
-                        <div class="req-headers">
-                            {{range $req.Headers}}<span class="header-tag">{{.Key}}: {{.Value}}</span>{{end}}
-                        </div>
-                        {{end}}
-                        {{if $req.HasReqBody}}
-                        <div class="body-section">
-                            <div class="body-label" onclick="toggleBody(this)"><span class="arrow">&#9654;</span> Request Body</div>
-                            <pre class="body-content" style="display:none;">{{$req.ReqBody}}</pre>
-                        </div>
-                        {{end}}
-                        {{if $req.HasResBody}}
-                        <div class="body-section">
-                            <div class="body-label" onclick="toggleBody(this)"><span class="arrow">&#9654;</span> Response Body</div>
-                            <pre class="body-content" style="display:none;">{{$req.ResBody}}</pre>
-                        </div>
-                        {{end}}
-                    </div>
-                </div>
-                {{end}}
-                {{else}}
-                <div class="empty-state">No HTTP requests recorded for this suite.</div>
-                {{end}}
-            </div>
-        </div>
-        {{end}}
-
-        <p class="footer">Generated by bounty-platform E2E test suite</p>
+  <!-- ─── MASTHEAD ─── -->
+  <header class="max-w-5xl mx-auto px-6 pt-10 pb-4">
+    <div class="flex items-center justify-between border-b-2 border-wsj-dark pb-2 mb-1">
+      <span class="font-sans text-xs tracking-[0.25em] uppercase text-wsj-muted">GitBusters — Quality Assurance</span>
+      <span class="font-sans text-xs tracking-wide text-wsj-muted">{{.Timestamp}}</span>
     </div>
+    <div class="border-b border-wsj-rule pb-1">
+      <span class="font-sans text-[10px] tracking-[0.2em] uppercase text-wsj-muted">End-to-End Test Report — Automated</span>
+    </div>
+  </header>
 
-    <script>
-        const suiteNames = {{.SuiteNamesJSON}};
-        const durationsMs = {{.DurationsMsJSON}};
+  <!-- ─── TITLE BLOCK ─── -->
+  <section class="max-w-5xl mx-auto px-6 pt-6 pb-4">
+    <hr class="double-rule" />
+    <h1 class="font-headline text-4xl md:text-5xl font-black leading-tight tracking-tight text-center mb-3">
+      E2E Test Report
+    </h1>
+    <p class="font-headline text-lg md:text-xl text-center text-wsj-muted italic mb-2">
+      Bounty Platform &mdash; Full-stack integration verification
+    </p>
+    <hr class="double-rule" />
+    <div class="flex justify-center gap-6 mt-3 font-sans text-xs tracking-wide text-wsj-muted uppercase">
+      <span>HTTP API</span>
+      <span>|</span>
+      <span>MCP Protocol</span>
+      <span>|</span>
+      <span>Token Economy</span>
+      <span>|</span>
+      <span>Legacy Compat</span>
+    </div>
+  </section>
 
-        new Chart(document.getElementById('durationChart'), {
-            type: 'bar',
-            data: {
-                labels: suiteNames,
-                datasets: [{
-                    label: 'Duration (ms)',
-                    data: durationsMs,
-                    backgroundColor: durationsMs.map((_, i) =>
-                        ['#58a6ff', '#bc8cff', '#a5d6ff', '#d2a8ff', '#f778ba',
-                         '#ff7b72', '#ffa657', '#d29922', '#3fb950'][i % 9]
-                    ),
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => ctx.raw + ' ms' } }
-                },
-                scales: {
-                    x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } },
-                    y: { grid: { display: false }, ticks: { color: '#c9d1d9', font: { size: 11 } } }
-                }
-            }
-        });
+  <!-- ─── MAIN CONTENT ─── -->
+  <article class="max-w-4xl mx-auto px-6">
 
-        new Chart(document.getElementById('resultChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Passed', 'Failed'],
-                datasets: [{
-                    data: [{{.Passed}}, {{.Failed}}],
-                    backgroundColor: ['#3fb950', '#f85149'],
-                    borderWidth: 0,
-                    spacing: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { color: '#c9d1d9', padding: 16 } }
-                }
-            }
-        });
+    <!-- ─── SUMMARY CARDS ─── -->
+    <section class="mb-8 mt-6">
+      <h2 class="font-headline text-2xl font-bold mb-4 border-b border-wsj-rule pb-2">Executive Summary</h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="data-callout p-4 rounded">
+          <p class="font-sans text-[10px] uppercase tracking-wider text-wsj-muted mb-1">Suites</p>
+          <p class="font-headline text-2xl font-bold text-wsj-accent">{{.TotalSuites}}</p>
+        </div>
+        <div class="data-callout p-4 rounded">
+          <p class="font-sans text-[10px] uppercase tracking-wider text-wsj-muted mb-1">Passed</p>
+          <p class="font-headline text-2xl font-bold text-wsj-green">{{.Passed}}</p>
+        </div>
+        <div class="data-callout p-4 rounded">
+          <p class="font-sans text-[10px] uppercase tracking-wider text-wsj-muted mb-1">Failed</p>
+          <p class="font-headline text-2xl font-bold text-wsj-red">{{.Failed}}</p>
+        </div>
+        <div class="data-callout p-4 rounded">
+          <p class="font-sans text-[10px] uppercase tracking-wider text-wsj-muted mb-1">Duration</p>
+          <p class="font-headline text-lg font-bold text-wsj-dark">{{.TotalDuration}}</p>
+        </div>
+        <div class="data-callout p-4 rounded">
+          <p class="font-sans text-[10px] uppercase tracking-wider text-wsj-muted mb-1">Requests</p>
+          <p class="font-headline text-2xl font-bold text-wsj-accent">{{.TotalRequests}}</p>
+        </div>
+      </div>
+    </section>
 
-        function toggleSuite(id) {
-            const body = document.getElementById(id);
-            const chevron = document.getElementById('chevron-' + id);
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                chevron.classList.add('open');
-            } else {
-                body.style.display = 'none';
-                chevron.classList.remove('open');
-            }
+    <!-- ─── SUMMARY TABLE ─── -->
+    <section class="mb-6">
+      <div class="overflow-x-auto">
+        <table class="w-full font-sans text-sm">
+          <thead>
+            <tr class="border-b-2 border-wsj-dark">
+              <th class="text-left py-2 font-semibold">Suite</th>
+              <th class="text-left py-2 font-semibold">Status</th>
+              <th class="text-right py-2 font-semibold">Requests</th>
+              <th class="text-right py-2 font-semibold">Duration</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-wsj-rule">
+            {{range .SuiteDetails}}
+            <tr>
+              <td class="py-2 font-medium">{{.Name}}</td>
+              <td class="py-2">
+                {{if eq .Status "PASS"}}<span class="font-semibold text-wsj-green">PASS</span>{{else}}<span class="font-semibold text-wsj-red">FAIL</span>{{end}}
+              </td>
+              <td class="py-2 text-right text-wsj-muted">{{.TotalReqs}}</td>
+              <td class="py-2 text-right text-wsj-muted font-mono text-xs">{{.DurationStr}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="section-rule" />
+
+    <!-- ─── CHARTS ─── -->
+    <section class="mb-8">
+      <h2 class="font-headline text-2xl font-bold mb-4 border-b border-wsj-rule pb-2">Performance Analysis</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 bg-white border border-wsj-rule rounded-lg p-6">
+          <h3 class="font-sans text-sm font-semibold uppercase tracking-wider mb-4">Duration per Suite</h3>
+          <div class="chart-container">
+            <canvas id="durationChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white border border-wsj-rule rounded-lg p-6">
+          <h3 class="font-sans text-sm font-semibold uppercase tracking-wider mb-4">Pass / Fail</h3>
+          <div class="chart-container-doughnut">
+            <canvas id="resultChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-rule" />
+
+    <!-- ─── SUITE TIMELINE ─── -->
+    <section class="mb-8">
+      <div class="flex items-center justify-between mb-4 border-b border-wsj-rule pb-2">
+        <h2 class="font-headline text-2xl font-bold">Suite Timeline</h2>
+        <button class="no-print font-sans text-xs uppercase tracking-wider px-3 py-1.5 border border-wsj-rule rounded hover:bg-wsj-cream text-wsj-muted hover:text-wsj-dark transition-colors" onclick="toggleAll()">Expand All</button>
+      </div>
+
+      {{range $i, $suite := .SuiteDetails}}
+      <div class="suite-section mb-2">
+        <div class="suite-header flex items-center gap-3 py-3 px-4 border border-wsj-rule rounded" onclick="toggleSuite('suite-{{$i}}')">
+          {{if eq $i 0}}<span class="chevron open text-wsj-muted text-xs" id="chevron-suite-{{$i}}">&#9654;</span>{{else}}<span class="chevron text-wsj-muted text-xs" id="chevron-suite-{{$i}}">&#9654;</span>{{end}}
+          {{if eq $suite.Status "PASS"}}<span class="font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-wsj-green/10 text-wsj-green">PASS</span>{{else}}<span class="font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-wsj-red/10 text-wsj-red">FAIL</span>{{end}}
+          <span class="font-sans text-sm font-semibold text-wsj-dark">{{$suite.Name}}</span>
+          <span class="ml-auto font-sans text-xs text-wsj-muted">{{$suite.TotalReqs}} requests &middot; {{$suite.DurationStr}}</span>
+        </div>
+        {{if eq $i 0}}<div class="py-3 pl-6" id="suite-{{$i}}">{{else}}<div class="py-3 pl-6" id="suite-{{$i}}" style="display:none;">{{end}}
+          {{if $suite.Requests}}
+          {{range $j, $req := $suite.Requests}}
+          <div class="timeline-item flex gap-3 pb-3">
+            <div class="timeline-line"></div>
+            <div class="step-circle">{{$req.Step}}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap leading-relaxed">
+                <span class="method-pill {{$req.MethodClass}}">{{$req.Method}}</span>
+                <code class="font-mono text-xs bg-wsj-cream px-1.5 py-0.5 rounded text-wsj-dark">{{$req.Path}}</code>
+                <span class="status-code {{$req.StatusClass}}">{{$req.StatusCode}}</span>
+                <span class="font-mono text-xs text-wsj-muted">{{$req.DurationStr}}</span>
+                {{if $req.SubTest}}<span class="font-sans text-[10px] bg-wsj-accent/8 text-wsj-accent px-1.5 py-0.5 rounded">{{$req.SubTest}}</span>{{end}}
+              </div>
+              {{if $req.Headers}}
+              <div class="flex gap-1.5 flex-wrap mt-1.5">
+                {{range $req.Headers}}<span class="font-mono text-[10px] bg-white border border-wsj-rule rounded px-1.5 py-0.5 text-wsj-muted">{{.Key}}: {{.Value}}</span>{{end}}
+              </div>
+              {{end}}
+              {{if $req.HasReqBody}}
+              <div class="mt-1.5">
+                <div class="body-label" onclick="toggleBody(this)"><span class="arrow">&#9654;</span> <span class="font-sans">Request Body</span></div>
+                <pre class="body-content" style="display:none;">{{$req.ReqBody}}</pre>
+              </div>
+              {{end}}
+              {{if $req.HasResBody}}
+              <div class="mt-1">
+                <div class="body-label" onclick="toggleBody(this)"><span class="arrow">&#9654;</span> <span class="font-sans">Response Body</span></div>
+                <pre class="body-content" style="display:none;">{{$req.ResBody}}</pre>
+              </div>
+              {{end}}
+            </div>
+          </div>
+          {{end}}
+          {{else}}
+          <p class="font-body text-sm text-wsj-muted italic py-2">No requests recorded for this suite.</p>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+    </section>
+
+  </article>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="max-w-5xl mx-auto px-6 pb-10">
+    <hr class="double-rule" />
+    <p class="font-sans text-[10px] tracking-[0.2em] uppercase text-wsj-muted text-center mt-4">
+      Generated by GitBusters E2E Test Suite
+    </p>
+  </footer>
+
+  <script>
+    const suiteNames = {{.SuiteNamesJSON}};
+    const durationsMs = {{.DurationsMsJSON}};
+
+    // ─── Duration bar chart ───
+    new Chart(document.getElementById('durationChart'), {
+      type: 'bar',
+      data: {
+        labels: suiteNames,
+        datasets: [{
+          label: 'Duration (ms)',
+          data: durationsMs,
+          backgroundColor: '#0274B6',
+          borderRadius: 3,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.raw + ' ms' } }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(196,185,167,0.3)' },
+            ticks: { color: '#666', font: { family: 'Inter', size: 10 }, callback: v => v + 'ms' }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#111', font: { family: 'Inter', size: 11 } }
+          }
         }
+      }
+    });
 
-        function toggleBody(label) {
-            const content = label.nextElementSibling;
-            const arrow = label.querySelector('.arrow');
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                arrow.classList.add('open');
-            } else {
-                content.style.display = 'none';
-                arrow.classList.remove('open');
-            }
+    // ─── Pass/Fail doughnut ───
+    new Chart(document.getElementById('resultChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Passed', 'Failed'],
+        datasets: [{
+          data: [{{.Passed}}, {{.Failed}}],
+          backgroundColor: ['#1A6B3C', '#9E1B1D'],
+          borderWidth: 0,
+          spacing: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#111', padding: 16, font: { family: 'Inter', size: 11 } } }
         }
+      }
+    });
 
-        let allExpanded = false;
-        function toggleAll() {
-            const btn = document.querySelector('.toggle-all');
-            const bodies = document.querySelectorAll('.suite-body');
-            const chevrons = document.querySelectorAll('.chevron');
-            allExpanded = !allExpanded;
-            if (allExpanded) {
-                bodies.forEach(b => b.style.display = 'block');
-                chevrons.forEach(c => c.classList.add('open'));
-                btn.textContent = 'Collapse All';
-            } else {
-                bodies.forEach(b => b.style.display = 'none');
-                chevrons.forEach(c => c.classList.remove('open'));
-                btn.textContent = 'Expand All';
-            }
-        }
-    </script>
+    // ─── Toggle functions ───
+    function toggleSuite(id) {
+      const body = document.getElementById(id);
+      const chevron = document.getElementById('chevron-' + id);
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.classList.add('open');
+      } else {
+        body.style.display = 'none';
+        chevron.classList.remove('open');
+      }
+    }
+
+    function toggleBody(label) {
+      const content = label.nextElementSibling;
+      const arrow = label.querySelector('.arrow');
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.classList.add('open');
+      } else {
+        content.style.display = 'none';
+        arrow.classList.remove('open');
+      }
+    }
+
+    let allExpanded = false;
+    function toggleAll() {
+      const btn = document.querySelector('[onclick="toggleAll()"]');
+      const bodies = document.querySelectorAll('.suite-section > div:nth-child(2)');
+      const chevrons = document.querySelectorAll('.chevron');
+      allExpanded = !allExpanded;
+      if (allExpanded) {
+        bodies.forEach(b => b.style.display = 'block');
+        chevrons.forEach(c => c.classList.add('open'));
+        btn.textContent = 'Collapse All';
+      } else {
+        bodies.forEach(b => b.style.display = 'none');
+        chevrons.forEach(c => c.classList.remove('open'));
+        btn.textContent = 'Expand All';
+      }
+    }
+  </script>
 </body>
 </html>`

@@ -30,13 +30,14 @@ func TestE2E(t *testing.T) {
 	}{
 		{"01_Health", testHealth},
 		{"02_SeedVerify", testSeedVerify},
-		{"03_Errors", testErrors},
-		{"04_WebhookErrors", testWebhookErrors},
-		{"05_MultiBounty", testMultiBounty},
-		{"06_CompetingSolutions", testCompetingSolutions},
-		{"07_PRClosedNotMerged", testPRClosedNotMerged},
-		{"08_FieldValidation", testFieldValidation},
-		{"09_Leaderboard", testLeaderboard},
+		{"03_AgentRegistration", testAgentRegistration},
+		{"04_TaskCreation", testTaskCreation},
+		{"05_TaskLifecycle", testTaskLifecycle},
+		{"06_TokenEconomy", testTokenEconomy},
+		{"07_TaskErrors", testTaskErrors},
+		{"08_MultiAgent", testMultiAgent},
+		{"09_LegacyCompat", testLegacyCompat},
+		{"10_MCP", testMCP},
 	}
 
 	for _, s := range suites {

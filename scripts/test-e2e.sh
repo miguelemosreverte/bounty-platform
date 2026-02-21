@@ -144,7 +144,9 @@ echo "==============================="
 echo ""
 
 cd "$ROOT_DIR/tests/e2e"
-E2E_BASE_URL="${TEST_BASE_URL}" go test -v -count=1 -timeout 300s ./...
+E2E_BASE_URL="${TEST_BASE_URL}" \
+E2E_DATABASE_PATH="${TEST_DB}" \
+  go test -v -count=1 -timeout 300s ./...
 
 echo ""
 echo "All E2E tests passed!"
