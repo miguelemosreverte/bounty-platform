@@ -1,0 +1,25 @@
+# Environment
+.env
+.env.local
+frontend/.env.local
+
+# Go
+bin/
+backend/pkg/bindings/
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Node
+node_modules/
+frontend/.next/
+frontend/out/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
