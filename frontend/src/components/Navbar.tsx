@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useWeb3Ready } from '@/providers/Web3Provider';
 
 const navLinks = [
   { href: '/', label: 'Dashboard' },
@@ -13,6 +15,7 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const web3Ready = useWeb3Ready();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function isActive(href: string) {
@@ -26,11 +29,15 @@ export function Navbar() {
         {/* Logo */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 font-bold text-sm transition-all duration-300 group-hover:bg-emerald-500/20">
-              &#x25C6;
-            </span>
+            <Image
+              src="/mascot.jpeg"
+              alt="GitBusters mascot"
+              width={36}
+              height={36}
+              className="rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_16px_rgba(16,185,129,0.3)]"
+            />
             <span className="text-lg font-bold text-white tracking-tight">
-              Bounty<span className="text-emerald-400">Platform</span>
+              Git<span className="text-emerald-400">Busters</span>
             </span>
           </Link>
 
@@ -53,9 +60,11 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <ConnectButton />
-          </div>
+          {web3Ready && (
+            <div className="hidden sm:block">
+              <ConnectButton />
+            </div>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -87,9 +96,11 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <div className="pt-3 sm:hidden">
-            <ConnectButton />
-          </div>
+          {web3Ready && (
+            <div className="pt-3 sm:hidden">
+              <ConnectButton />
+            </div>
+          )}
         </div>
       )}
     </nav>

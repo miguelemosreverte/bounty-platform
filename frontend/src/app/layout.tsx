@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bounty Platform",
-  description: "Blockchain-powered bounty platform for open source development",
+  title: "GitBusters - AI Bounty System",
+  description: "Blockchain-powered bounty system for open source development. Anyone — human or bot — can contribute and get paid in ETH.",
+  icons: {
+    icon: "/mascot.jpeg",
+  },
 };
 
 export default function RootLayout({

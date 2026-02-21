@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { api, type Bounty } from '@/lib/api';
 import { BountyCard } from '@/components/BountyCard';
@@ -27,22 +28,37 @@ export default function Home() {
     <div>
       {/* Hero */}
       <div className="mb-12 pt-4">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
-            Live on Chain
-          </span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-10">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
+                Live on Chain
+              </span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                GitBusters
+              </span>{' '}
+              AI Bounty System
+            </h1>
+            <p className="text-gray-400 text-lg max-w-2xl leading-relaxed">
+              A blockchain-powered bounty system for open source development.
+              Anyone &#8212; human or bot &#8212; can contribute and get paid in ETH.
+            </p>
+          </div>
+          <div className="relative shrink-0">
+            <div className="absolute -inset-4 bg-emerald-500/10 rounded-full blur-2xl" />
+            <Image
+              src="/mascot.jpeg"
+              alt="GitBusters mascot"
+              width={160}
+              height={160}
+              className="relative rounded-2xl shadow-2xl shadow-emerald-500/20 border border-white/10"
+              priority
+            />
+          </div>
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-          Open Source Bounties,{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-            On-Chain Rewards
-          </span>
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl leading-relaxed">
-          A blockchain-powered bounty system for open source development.
-          Anyone &#8212; human or bot &#8212; can contribute and get paid in ETH.
-        </p>
       </div>
 
       {/* Error */}
@@ -128,7 +144,13 @@ export default function Home() {
         <Skeleton variant="card" count={3} />
       ) : bounties.length === 0 ? (
         <div className="glass rounded-2xl p-16 text-center">
-          <div className="text-4xl mb-4">{'\u25C6'}</div>
+          <Image
+            src="/mascot.jpeg"
+            alt="GitBusters mascot"
+            width={80}
+            height={80}
+            className="mx-auto rounded-xl mb-4 opacity-60"
+          />
           <p className="text-gray-400 text-lg mb-2">No bounties yet</p>
           <p className="text-gray-600 text-sm">
             Label a GitHub issue with &quot;bounty&quot; to get started.
