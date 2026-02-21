@@ -1,6 +1,7 @@
-import { http, createConfig } from 'wagmi';
+import { http } from 'wagmi';
 import { defineChain } from 'viem';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { connect, disconnect, injected } from '@wagmi/core';
 
 export const anvil = defineChain({
   id: 31337,
@@ -20,3 +21,8 @@ export const config = getDefaultConfig({
   },
   ssr: true,
 });
+
+// Expose wagmi helpers on window for E2E tests to programmatically connect wallets
+if (typeof window !== 'undefined') {
+  (window as any).__wagmi = { config, connect, disconnect, injected };
+}

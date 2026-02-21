@@ -5,6 +5,18 @@
   --color-foreground: #ededed;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* WSJ / Back Office Theme Tokens */
+  --color-wsj-bg: #FBF9F6;
+  --color-wsj-card: #F5F1EB;
+  --color-wsj-rule: #C4B9A7;
+  --color-wsj-accent: #0274B6;
+  --color-wsj-accent-hover: #025d92;
+  --color-wsj-text: #111111;
+  --color-wsj-muted: #666666;
+  --color-wsj-highlight: #FFF8E7;
+  --font-headline: var(--font-playfair);
+  --font-body-serif: var(--font-source-serif);
 }
 
 /* Custom scrollbar */
@@ -93,4 +105,102 @@ body::before {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(16, 185, 129, 0.3);
   box-shadow: 0 0 30px rgba(16, 185, 129, 0.06);
+}
+
+/* ======================================================================== */
+/* WSJ / BACK OFFICE THEME                                                   */
+/* ======================================================================== */
+
+/* Override body background within the backoffice layout */
+.wsj-theme {
+  background: var(--color-wsj-bg);
+  color: var(--color-wsj-text);
+  font-family: var(--font-body-serif), Georgia, 'Times New Roman', serif;
+}
+
+/* Neutralize the dark body::before gradient inside WSJ theme */
+.wsj-theme::before {
+  display: none !important;
+}
+
+.wsj-theme ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+.wsj-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* WSJ headline */
+.wsj-headline {
+  font-family: var(--font-headline), 'Playfair Display', Georgia, serif;
+  color: var(--color-wsj-text);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* WSJ card */
+.wsj-card {
+  background: white;
+  border: 1px solid var(--color-wsj-rule);
+  border-radius: 4px;
+}
+
+.wsj-card-hover {
+  transition: all 0.2s ease;
+}
+.wsj-card-hover:hover {
+  border-color: var(--color-wsj-accent);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* WSJ divider rules */
+.wsj-rule {
+  border-color: var(--color-wsj-rule);
+}
+
+.wsj-rule-double {
+  border-top: 3px double var(--color-wsj-rule);
+}
+
+/* WSJ link style */
+.wsj-link {
+  color: var(--color-wsj-accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.wsj-link:hover {
+  color: var(--color-wsj-accent-hover);
+  text-decoration: underline;
+}
+
+/* WSJ accent background */
+.wsj-accent-bg {
+  background: var(--color-wsj-accent);
+  color: white;
+}
+
+/* WSJ sidebar active state */
+.wsj-sidebar-active {
+  background: var(--color-wsj-highlight);
+  border-left: 3px solid var(--color-wsj-accent);
+  color: var(--color-wsj-text);
+  font-weight: 600;
+}
+
+/* WSJ stat card */
+.wsj-stat-card {
+  background: white;
+  border: 1px solid var(--color-wsj-rule);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Drop cap for editorial headers */
+.wsj-drop-cap::first-letter {
+  font-family: var(--font-headline), 'Playfair Display', Georgia, serif;
+  float: left;
+  font-size: 3.5em;
+  line-height: 0.8;
+  margin-right: 0.08em;
+  color: var(--color-wsj-accent);
 }

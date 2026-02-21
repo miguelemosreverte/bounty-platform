@@ -11,9 +11,10 @@ import (
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/config"
 	gh "github.com/miguelemosreverte/bounty-platform/backend/internal/github"
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/oracle"
+	"github.com/miguelemosreverte/bounty-platform/backend/internal/storage"
 )
 
-func NewRouter(chain *blockchain.Client, orc *oracle.Oracle, cfg *config.Config) http.Handler {
+func NewRouter(chain *blockchain.Client, store storage.Store, orc *oracle.Oracle, cfg *config.Config) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -25,7 +26,7 @@ func NewRouter(chain *blockchain.Client, orc *oracle.Oracle, cfg *config.Config)
 		AllowCredentials: true,
 	}))
 
-	h := &Handlers{chain: chain}
+	h := &Handlers{chain: chain, store: store}
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {

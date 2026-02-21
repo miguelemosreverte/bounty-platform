@@ -25,6 +25,7 @@ export function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
 
   return (
     <span
+      data-testid={`status-badge-${status}`}
       className={`inline-flex items-center gap-1.5 rounded-full font-medium ${config.bg} ${config.text} ${sizeClasses}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />

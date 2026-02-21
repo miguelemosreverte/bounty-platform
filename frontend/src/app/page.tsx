@@ -4,165 +4,328 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { api, type Bounty } from '@/lib/api';
-import { BountyCard } from '@/components/BountyCard';
-import { Skeleton } from '@/components/Skeleton';
+import { weiToEth } from '@/lib/utils';
 
-export default function Home() {
+/* ──────────────────────────────────────────────────────────────────────── */
+/*  Inline SVG icons                                                       */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+function CodeBracketIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17.25 6.75L22.5 12l-5.25 5.25M6.75 17.25L1.5 12l5.25-5.25" />
+    </svg>
+  );
+}
+
+function GitBranchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3v12" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="6" r="3" />
+      <path d="M18 9a9 9 0 01-9 9" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/*  Role card configuration                                                */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+interface RoleCard {
+  testId: string;
+  title: string;
+  icon: React.ReactNode;
+  description: string;
+  cta: string;
+  href: string;
+  accentFrom: string;
+  accentTo: string;
+  glowColor: string;
+}
+
+const ROLES: RoleCard[] = [
+  {
+    testId: 'landing-card-developer',
+    title: 'For Developers',
+    icon: <CodeBracketIcon className="w-8 h-8" />,
+    description: 'Find bounties, submit solutions, get paid in ETH',
+    cta: 'Explore Bounties \u2192',
+    href: '/developer',
+    accentFrom: 'from-emerald-400',
+    accentTo: 'to-teal-300',
+    glowColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  {
+    testId: 'landing-card-maintainer',
+    title: 'For Maintainers',
+    icon: <GitBranchIcon className="w-8 h-8" />,
+    description: 'Post bounties on issues, AI reviews solutions, auto-payout',
+    cta: 'Start Posting \u2192',
+    href: '/maintainer',
+    accentFrom: 'from-blue-400',
+    accentTo: 'to-cyan-300',
+    glowColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  {
+    testId: 'landing-card-enterprise',
+    title: 'For Enterprise',
+    icon: <ShieldIcon className="w-8 h-8" />,
+    description: 'Secure your dependencies with automated bounty programs',
+    cta: 'Learn More \u2192',
+    href: '/enterprise',
+    accentFrom: 'from-purple-400',
+    accentTo: 'to-violet-300',
+    glowColor: 'rgba(139, 92, 246, 0.15)',
+  },
+];
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/*  Page component                                                         */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+export default function LandingPage() {
   const [bounties, setBounties] = useState<Bounty[]>([]);
-  const [health, setHealth] = useState<{ status: string; chainId: string; oracle: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.getHealth().then(setHealth).catch(() => setError('Backend not reachable')),
-      api.getBounties().then(setBounties).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    api
+      .getBounties()
+      .then(setBounties)
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
   }, []);
 
-  const openBounties = bounties.filter(b => b.status === 'open');
-  const closedBounties = bounties.filter(b => b.status === 'closed');
-  const totalPaid = closedBounties.reduce((sum, b) => sum + Number(BigInt(b.amount)) / 1e18, 0);
+  const openBounties = bounties.filter((b) => b.status === 'open');
+  const closedBounties = bounties.filter((b) => b.status === 'closed');
+  const totalPaid = closedBounties.reduce(
+    (sum, b) => sum + Number(BigInt(b.amount)) / 1e18,
+    0,
+  );
 
   return (
-    <div>
-      {/* Hero */}
-      <div className="mb-12 pt-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
-                Live on Chain
-              </span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-                GitBusters
-              </span>{' '}
-              AI Bounty System
-            </h1>
-            <p className="text-gray-400 text-lg max-w-2xl leading-relaxed">
-              A blockchain-powered bounty system for open source development.
-              Anyone &#8212; human or bot &#8212; can contribute and get paid in ETH.
-            </p>
-          </div>
-          <div className="relative shrink-0">
-            <div className="absolute -inset-4 bg-emerald-500/10 rounded-full blur-2xl" />
-            <Image
-              src="/mascot.jpeg"
-              alt="GitBusters mascot"
-              width={160}
-              height={160}
-              className="relative rounded-2xl shadow-2xl shadow-emerald-500/20 border border-white/10"
-              priority
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="rounded-2xl bg-red-500/5 border border-red-500/20 p-4 mb-8 flex items-center gap-3">
-          <span className="text-red-400 text-lg">{'\u26A0'}</span>
-          <div>
-            <p className="text-red-400 text-sm font-medium">{error}</p>
-            <p className="text-red-400/60 text-xs mt-0.5">Make sure Anvil and the Go backend are running.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06] text-lg">
-              {'\u25C8'}
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Bounties</span>
-          </div>
-          <div className="text-3xl font-bold text-white">{bounties.length}</div>
-        </div>
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-lg text-emerald-400">
-              {'\u25C6'}
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">Open Bounties</span>
-          </div>
-          <div className="text-3xl font-bold text-emerald-400">{openBounties.length}</div>
-        </div>
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-lg text-blue-400">
-              {'\u039E'}
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Paid</span>
-          </div>
-          <div className="text-3xl font-bold text-white">
-            {totalPaid.toFixed(2)} <span className="text-base text-gray-500 font-normal">ETH</span>
-          </div>
-        </div>
-      </div>
-
-      {/* System Status */}
-      {health && (
-        <div className="glass rounded-2xl p-6 mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 pulse-dot" />
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">System Status</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div>
-              <div className="text-lg font-bold text-emerald-400 capitalize">{health.status}</div>
-              <div className="text-xs text-gray-500 mt-0.5">Backend</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-white">Chain {health.chainId}</div>
-              <div className="text-xs text-gray-500 mt-0.5">Network</div>
-            </div>
-            <div>
-              <div className="font-mono text-sm text-gray-300">{health.oracle.slice(0, 10)}...</div>
-              <div className="text-xs text-gray-500 mt-0.5">Oracle Address</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recent Bounties */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white">Recent Bounties</h2>
-        <Link
-          href="/bounties"
-          className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors duration-300 flex items-center gap-1"
-        >
-          View all <span>{'\u2192'}</span>
-        </Link>
-      </div>
-
-      {loading ? (
-        <Skeleton variant="card" count={3} />
-      ) : bounties.length === 0 ? (
-        <div className="glass rounded-2xl p-16 text-center">
+    <div className="relative min-h-screen flex flex-col items-center overflow-hidden">
+      {/* ================================================================ */}
+      {/* HERO                                                             */}
+      {/* ================================================================ */}
+      <section className="w-full flex flex-col items-center pt-20 pb-10 px-4 sm:px-6">
+        {/* Mascot */}
+        <div className="relative mb-8">
+          <div className="absolute -inset-6 bg-emerald-500/15 rounded-full blur-3xl" />
           <Image
             src="/mascot.jpeg"
             alt="GitBusters mascot"
-            width={80}
-            height={80}
-            className="mx-auto rounded-xl mb-4 opacity-60"
+            width={140}
+            height={140}
+            className="relative rounded-2xl shadow-2xl shadow-emerald-500/20 border border-white/10"
+            priority
           />
-          <p className="text-gray-400 text-lg mb-2">No bounties yet</p>
-          <p className="text-gray-600 text-sm">
-            Label a GitHub issue with &quot;bounty&quot; to get started.
+        </div>
+
+        {/* Title */}
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-center mb-5">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+            GitBusters
+          </span>
+        </h1>
+
+        {/* Tagline */}
+        <p className="text-lg sm:text-xl text-gray-400 text-center max-w-xl leading-relaxed mb-4">
+          Blockchain-powered bounty system for open source
+        </p>
+
+        {/* Live badge */}
+        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 text-xs font-medium text-emerald-400 mb-12">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
+          Live on Chain
+        </span>
+
+        {/* Connect Wallet CTA (top-level) */}
+        <div className="mb-16" data-testid="landing-connect-wallet">
+          <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-3 text-emerald-400 font-medium text-sm cursor-pointer hover:bg-emerald-500/20 transition-colors duration-200">
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M17 8h1a2 2 0 012 2v6a2 2 0 01-2 2H2a2 2 0 01-2-2v-6a2 2 0 012-2h1V6a7 7 0 0114 0v2zM3 10v6h14v-6H3zm6-4v4h2V6a5 5 0 00-10 0v2h1V6a4 4 0 018 0z" />
+            </svg>
+            Connect Wallet to Get Started
+          </div>
+          <p className="text-gray-600 text-xs text-center mt-2">
+            Use the wallet button in the top-right corner
           </p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {bounties.slice(0, 5).map(bounty => (
-            <BountyCard key={bounty.id} bounty={bounty} />
+      </section>
+
+      {/* ================================================================ */}
+      {/* ROLE CARDS                                                       */}
+      {/* ================================================================ */}
+      <section className="w-full max-w-5xl px-4 sm:px-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {ROLES.map((role) => (
+            <Link
+              key={role.testId}
+              href={role.href}
+              data-testid={role.testId}
+              className="group relative"
+            >
+              {/* Hover glow */}
+              <div
+                className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                style={{ background: role.glowColor }}
+              />
+
+              <div className="glass glass-hover relative rounded-2xl p-8 h-full flex flex-col items-center text-center transition-all duration-300 group-hover:translate-y-[-4px]">
+                {/* Icon */}
+                <div
+                  className={`flex items-center justify-center w-16 h-16 rounded-2xl mb-6 bg-gradient-to-br ${role.accentFrom} ${role.accentTo} text-white/90 shadow-lg`}
+                >
+                  {role.icon}
+                </div>
+
+                {/* Title */}
+                <h2 className="text-xl font-bold text-white mb-3">
+                  {role.title}
+                </h2>
+
+                {/* Description */}
+                <p className="text-sm text-gray-400 leading-relaxed mb-6 flex-1">
+                  {role.description}
+                </p>
+
+                {/* CTA */}
+                <span
+                  className={`text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r ${role.accentFrom} ${role.accentTo} group-hover:brightness-125 transition-all duration-300`}
+                >
+                  {role.cta}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
-      )}
+      </section>
+
+      {/* ================================================================ */}
+      {/* LIVE STATS                                                       */}
+      {/* ================================================================ */}
+      <section className="w-full max-w-5xl px-4 sm:px-6 mb-16">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-gray-500 text-center mb-6">
+          Platform Stats
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Total Bounties */}
+          <div className="glass rounded-2xl p-6 text-center">
+            <div className="text-3xl font-bold text-white mb-1">
+              {statsLoading ? (
+                <span className="inline-block w-12 h-8 rounded skeleton-shimmer" />
+              ) : (
+                bounties.length
+              )}
+            </div>
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-500">
+              Total Bounties
+            </div>
+          </div>
+
+          {/* Open Bounties */}
+          <div className="glass rounded-2xl p-6 text-center">
+            <div className="text-3xl font-bold text-emerald-400 mb-1">
+              {statsLoading ? (
+                <span className="inline-block w-12 h-8 rounded skeleton-shimmer" />
+              ) : (
+                openBounties.length
+              )}
+            </div>
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-500">
+              Open Bounties
+            </div>
+          </div>
+
+          {/* Total Paid */}
+          <div className="glass rounded-2xl p-6 text-center">
+            <div className="text-3xl font-bold text-white mb-1">
+              {statsLoading ? (
+                <span className="inline-block w-16 h-8 rounded skeleton-shimmer" />
+              ) : (
+                <>
+                  {weiToEth(
+                    closedBounties
+                      .reduce((sum, b) => sum + BigInt(b.amount), 0n)
+                      .toString(),
+                  )}{' '}
+                  <span className="text-sm text-emerald-400 font-normal">
+                    ETH
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-500">
+              Total Paid
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================ */}
+      {/* QUICK LINKS                                                      */}
+      {/* ================================================================ */}
+      <section className="w-full max-w-5xl px-4 sm:px-6 mb-20">
+        <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
+          <Link
+            href="/bounties"
+            className="hover:text-emerald-400 transition-colors duration-200"
+          >
+            Browse All Bounties
+          </Link>
+          <span className="h-4 w-px bg-white/10" />
+          <Link
+            href="/leaderboard"
+            className="hover:text-emerald-400 transition-colors duration-200"
+          >
+            Leaderboard
+          </Link>
+        </div>
+      </section>
+
+      {/* ================================================================ */}
+      {/* FOOTER TAGLINE                                                   */}
+      {/* ================================================================ */}
+      <footer className="w-full text-center pb-10 px-4">
+        <p className="text-xs text-gray-600">
+          Built on Ethereum &middot; Powered by smart contracts &middot; Open
+          source
+        </p>
+      </footer>
     </div>
   );
 }

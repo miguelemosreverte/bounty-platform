@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@metamask/sdk": "^0.34.0",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.90.21",
     "next": "16.1.6",
@@ -17,6 +18,7 @@
     "wagmi": "^3.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -20,6 +20,8 @@ type Config struct {
 	GitHubToken         string
 	GitHubTestRepo      string // "owner/repo"
 
+	DatabasePath string // SQLite database file path
+
 	Port string
 }
 
@@ -39,6 +41,7 @@ func Load() *Config {
 		GitHubWebhookSecret:     getEnv("GITHUB_WEBHOOK_SECRET", ""),
 		GitHubToken:             getEnv("GITHUB_TOKEN", ""),
 		GitHubTestRepo:          getEnv("GITHUB_TEST_REPO", "miguelemosreverte/playground-01"),
+		DatabasePath:            getEnv("DATABASE_PATH", "bounty.db"),
 		Port:                    getEnv("PORT", "8080"),
 	}
 

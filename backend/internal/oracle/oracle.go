@@ -15,23 +15,48 @@ import (
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/blockchain"
 	gh "github.com/miguelemosreverte/bounty-platform/backend/internal/github"
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/models"
+	"github.com/miguelemosreverte/bounty-platform/backend/internal/storage"
 )
+
+type event struct {
+	eventType string
+	payload   *gh.WebhookPayload
+}
 
 type Oracle struct {
 	chain  *blockchain.Client
 	gh     *gh.Client
 	agents *agents.AgentSet
+	store  storage.Store
+	queue  chan event
 }
 
-func NewOracle(chain *blockchain.Client, ghClient *gh.Client, agentSet *agents.AgentSet) *Oracle {
-	return &Oracle{
+func NewOracle(chain *blockchain.Client, ghClient *gh.Client, agentSet *agents.AgentSet, store storage.Store) *Oracle {
+	o := &Oracle{
 		chain:  chain,
 		gh:     ghClient,
 		agents: agentSet,
+		store:  store,
+		queue:  make(chan event, 100),
+	}
+	go o.processQueue()
+	return o
+}
+
+// processQueue serializes event processing to avoid nonce collisions
+// when multiple webhooks arrive concurrently.
+func (o *Oracle) processQueue() {
+	for ev := range o.queue {
+		o.handleEventSync(ev.eventType, ev.payload)
 	}
 }
 
+// HandleEvent enqueues the event for sequential processing.
 func (o *Oracle) HandleEvent(eventType string, payload *gh.WebhookPayload) {
+	o.queue <- event{eventType: eventType, payload: payload}
+}
+
+func (o *Oracle) handleEventSync(eventType string, payload *gh.WebhookPayload) {
 	switch eventType {
 	case "issues":
 		if payload.Action == "labeled" && payload.Issue != nil {
@@ -97,7 +122,14 @@ func (o *Oracle) onIssueLabeled(payload *gh.WebhookPayload) {
 		log.Printf("Update metadata error: %v", err)
 	}
 
-	// 6. Post comment on GitHub issue
+	// 6. Cache in SQLite — read fresh from chain to get all fields
+	if bounty, err := o.chain.GetBounty(bountyID); err == nil {
+		if err := o.store.UpsertBounty(bounty); err != nil {
+			log.Printf("SQLite upsert bounty error: %v", err)
+		}
+	}
+
+	// 7. Post comment on GitHub issue
 	comment := formatBountyComment(bountyID, prd, est, qa)
 	if err := o.gh.PostComment(ctx, repo.Owner.Login, repo.Name, issue.Number, comment); err != nil {
 		log.Printf("Post comment error: %v", err)
@@ -143,6 +175,20 @@ func (o *Oracle) onPROpened(payload *gh.WebhookPayload) {
 
 	log.Printf("Solution #%d registered for bounty #%d (PR #%d, wallet: %s)",
 		solutionID, bountyID.Uint64(), pr.Number, wallet)
+
+	// Cache solution in SQLite — use bounty-local index (solutionCount - 1)
+	if bounty, err := o.chain.GetBounty(bountyID.Uint64()); err == nil {
+		if err := o.store.UpsertBounty(bounty); err != nil {
+			log.Printf("SQLite update bounty error: %v", err)
+		}
+		if bounty.SolutionCount > 0 {
+			if sol, err := o.chain.GetSolution(bountyID.Uint64(), bounty.SolutionCount-1); err == nil {
+				if err := o.store.UpsertSolution(sol); err != nil {
+					log.Printf("SQLite upsert solution error: %v", err)
+				}
+			}
+		}
+	}
 
 	ctx := context.Background()
 	comment := fmt.Sprintf("Solution registered on-chain for Bounty #%d.\n\n- Solution ID: %d\n- Contributor wallet: `%s`\n- Commit: `%s`",
@@ -236,6 +282,23 @@ func (o *Oracle) onPRMerged(payload *gh.WebhookPayload) {
 		if sol.Contributor != (common.Address{}) {
 			if err := o.chain.RecordBountyCompleted(sol.Contributor, bounty.Maintainer, payoutAmount); err != nil {
 				log.Printf("Failed to update leaderboard: %v", err)
+			}
+		}
+
+		// Cache updated state in SQLite
+		if updatedBounty, err := o.chain.GetBounty(bountyID.Uint64()); err == nil {
+			_ = o.store.UpsertBounty(updatedBounty)
+		}
+		if updatedSol, err := o.chain.GetSolution(bountyID.Uint64(), solutionIndex); err == nil {
+			_ = o.store.UpsertSolution(updatedSol)
+		}
+		// Update leaderboard cache
+		if sol.Contributor != (common.Address{}) {
+			if entry, err := o.chain.GetScore(sol.Contributor, 0); err == nil {
+				_ = o.store.UpsertLeaderboardEntry(entry)
+			}
+			if entry, err := o.chain.GetScore(bounty.Maintainer, 1); err == nil {
+				_ = o.store.UpsertLeaderboardEntry(entry)
 			}
 		}
 

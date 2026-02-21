@@ -10,6 +10,7 @@ import (
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/config"
 	gh "github.com/miguelemosreverte/bounty-platform/backend/internal/github"
 	"github.com/miguelemosreverte/bounty-platform/backend/internal/oracle"
+	"github.com/miguelemosreverte/bounty-platform/backend/internal/storage"
 )
 
 func main() {
@@ -34,11 +35,25 @@ func main() {
 		log.Println("No contract addresses configured. Deploy contracts first.")
 	}
 
+	// Initialize SQLite store
+	store, err := storage.NewSQLiteStore(cfg.DatabasePath)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQLite store: %v", err)
+	}
+	defer store.Close()
+
+	// Sync existing on-chain data into SQLite
+	if cfg.BountyContractAddr != "" {
+		if err := storage.SyncFromChain(store, chain); err != nil {
+			log.Printf("Warning: chain sync failed: %v", err)
+		}
+	}
+
 	ghClient := gh.NewClient(cfg.GitHubToken)
 	agentSet := agents.NewStubAgentSet()
-	orc := oracle.NewOracle(chain, ghClient, agentSet)
+	orc := oracle.NewOracle(chain, ghClient, agentSet, store)
 
-	router := api.NewRouter(chain, orc, cfg)
+	router := api.NewRouter(chain, store, orc, cfg)
 
 	log.Printf("Server starting on :%s", cfg.Port)
 	log.Printf("  Health:    http://localhost:%s/api/health", cfg.Port)

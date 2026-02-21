@@ -4,10 +4,19 @@ import { useEffect, useState } from 'react';
 import { api, type LeaderboardEntry } from '@/lib/api';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { Skeleton } from '@/components/Skeleton';
+import { useWeb3Ready } from '@/providers/Web3Provider';
+import { useAccountSafe } from '@/hooks/useWalletActivity';
+
+const roleFilters = ['all', 'contributor', 'maintainer'] as const;
+type RoleFilter = typeof roleFilters[number];
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+
+  const web3Ready = useWeb3Ready();
+  const { address } = useAccountSafe();
 
   useEffect(() => {
     api.getLeaderboard()
@@ -23,6 +32,25 @@ export default function LeaderboardPage() {
         <p className="text-gray-400">
           Rankings based on completed bounties, payouts, and reputation scores.
         </p>
+      </div>
+
+      {/* Role filter pills */}
+      <div className="flex gap-2 mb-6">
+        {roleFilters.map(f => (
+          <button
+            key={f}
+            onClick={() => setRoleFilter(f)}
+            data-testid={`leaderboard-filter-${f}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
+              roleFilter === f
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : 'text-gray-400 border border-white/[0.06] hover:border-white/10 hover:text-white hover:bg-white/[0.03]'
+            }`}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'all' ? '' : 's'}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -44,7 +72,11 @@ export default function LeaderboardPage() {
           </table>
         </div>
       ) : (
-        <LeaderboardTable entries={entries} />
+        <LeaderboardTable
+          entries={entries}
+          filter={roleFilter}
+          highlightAddress={web3Ready && address ? address : undefined}
+        />
       )}
     </div>
   );

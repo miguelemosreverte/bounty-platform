@@ -1,20 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import type { Bounty } from '@/lib/api';
 import { StatusBadge } from './StatusBadge';
-
-function weiToEth(wei: string): string {
-  const num = BigInt(wei);
-  const eth = Number(num) / 1e18;
-  return eth.toFixed(4);
-}
+import { GitHubLink } from '@/components/GitHubLink';
+import {
+  weiToEth,
+  formatAddress,
+  timeAgo,
+  githubIssueUrl,
+  type Bounty,
+} from '@/lib/utils';
 
 export function BountyCard({ bounty }: { bounty: Bounty }) {
   const complexityPercent = (bounty.estimatedComplexity / 10) * 100;
 
   return (
-    <Link href={`/bounties/${bounty.id}`} className="block group">
+    <Link href={`/bounties/${bounty.id}`} className="block group" data-testid={`bounty-card-${bounty.id}`}>
       <div className="glass glass-hover rounded-2xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -22,10 +23,20 @@ export function BountyCard({ bounty }: { bounty: Bounty }) {
               <span className="text-xs font-mono text-gray-500">#{bounty.id}</span>
               <StatusBadge status={bounty.status} />
             </div>
-            <h3 className="text-base font-semibold text-white group-hover:text-emerald-400 transition-colors duration-300 truncate">
-              {bounty.repoOwner}/{bounty.repoName}
-              <span className="text-gray-500 font-normal"> #{bounty.issueNumber}</span>
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-white group-hover:text-emerald-400 transition-colors duration-300 truncate">
+                {bounty.repoOwner}/{bounty.repoName}
+                <span className="text-gray-500 font-normal"> #{bounty.issueNumber}</span>
+              </h3>
+              <GitHubLink
+                href={githubIssueUrl(bounty.repoOwner, bounty.repoName, bounty.issueNumber)}
+                iconOnly
+                className="shrink-0 opacity-60 group-hover:opacity-100"
+              />
+            </div>
+            {bounty.createdAt > 0 && (
+              <p className="text-xs text-gray-600 mt-1">{timeAgo(bounty.createdAt)}</p>
+            )}
           </div>
 
           <div className="text-right shrink-0">
@@ -64,7 +75,7 @@ export function BountyCard({ bounty }: { bounty: Bounty }) {
               {'\u2691'} {bounty.solutionCount} solution{bounty.solutionCount !== 1 ? 's' : ''}
             </span>
             <span className="font-mono">
-              {bounty.maintainer.slice(0, 6)}...{bounty.maintainer.slice(-4)}
+              {formatAddress(bounty.maintainer)}
             </span>
           </div>
           <span className="text-emerald-400/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs">

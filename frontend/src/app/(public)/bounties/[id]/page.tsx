@@ -3,14 +3,21 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { api, type Bounty, type Solution } from '@/lib/api';
+import { api } from '@/lib/api';
 import { StatusBadge } from '@/components/StatusBadge';
-
-function weiToEth(wei: string): string {
-  const num = BigInt(wei);
-  const eth = Number(num) / 1e18;
-  return eth.toFixed(4);
-}
+import { GitHubLink } from '@/components/GitHubLink';
+import {
+  weiToEth,
+  formatAddress,
+  timeAgo,
+  formatDate,
+  githubRepoUrl,
+  githubIssueUrl,
+  githubPrUrl,
+  githubCommitUrl,
+  type Bounty,
+  type Solution,
+} from '@/lib/utils';
 
 export default function BountyDetailPage() {
   const params = useParams();
@@ -68,13 +75,33 @@ export default function BountyDetailPage() {
           <h1 className="text-3xl font-bold tracking-tight">Bounty #{bounty.id}</h1>
           <StatusBadge status={bounty.status} size="md" />
         </div>
-        <p className="text-gray-400 flex items-center gap-2">
-          <span className="font-mono text-sm">
-            {bounty.repoOwner}/{bounty.repoName}
-          </span>
+        <div className="flex items-center gap-2 text-gray-400">
+          <GitHubLink
+            href={githubRepoUrl(bounty.repoOwner, bounty.repoName)}
+            label={`${bounty.repoOwner}/${bounty.repoName}`}
+          />
           <span className="text-gray-600">{'\u00B7'}</span>
-          <span className="text-sm">Issue #{bounty.issueNumber}</span>
-        </p>
+          <GitHubLink
+            href={githubIssueUrl(bounty.repoOwner, bounty.repoName, bounty.issueNumber)}
+            label={`Issue #${bounty.issueNumber}`}
+          />
+        </div>
+        {/* Timestamps */}
+        <div className="flex items-center gap-3 mt-2">
+          {bounty.createdAt > 0 && (
+            <span className="text-xs text-gray-500" title={formatDate(bounty.createdAt)}>
+              Created {timeAgo(bounty.createdAt)}
+            </span>
+          )}
+          {bounty.closedAt > 0 && (
+            <>
+              <span className="text-gray-700">{'\u00B7'}</span>
+              <span className="text-xs text-gray-500" title={formatDate(bounty.closedAt)}>
+                Closed {timeAgo(bounty.closedAt)}
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Two-column layout */}
@@ -112,7 +139,7 @@ export default function BountyDetailPage() {
             <div className="flex items-center justify-between">
               <dt className="text-sm text-gray-500">Maintainer</dt>
               <dd className="font-mono text-sm text-gray-300">
-                {bounty.maintainer.slice(0, 8)}...{bounty.maintainer.slice(-6)}
+                {formatAddress(bounty.maintainer)}
               </dd>
             </div>
             <div className="flex items-center justify-between">
@@ -123,6 +150,12 @@ export default function BountyDetailPage() {
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-gray-500">PRD Hash</dt>
                 <dd className="font-mono text-xs text-gray-400 truncate max-w-[200px]">{bounty.prdHash}</dd>
+              </div>
+            )}
+            {bounty.qaHash && (
+              <div className="flex items-center justify-between">
+                <dt className="text-sm text-gray-500">QA Hash</dt>
+                <dd className="font-mono text-xs text-gray-400 truncate max-w-[200px]">{bounty.qaHash}</dd>
               </div>
             )}
           </dl>
@@ -179,12 +212,15 @@ export default function BountyDetailPage() {
         ) : (
           <div className="space-y-3">
             {solutions.map(sol => (
-              <div key={sol.id} className="glass glass-hover rounded-2xl p-5">
+              <div key={sol.id} data-testid="solution-item" className="glass glass-hover rounded-2xl p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-xs font-mono text-gray-500">#{sol.id}</span>
                     <StatusBadge status={sol.status} />
-                    <span className="text-sm text-gray-400">PR #{sol.prNumber}</span>
+                    <GitHubLink
+                      href={githubPrUrl(bounty.repoOwner, bounty.repoName, sol.prNumber)}
+                      label={`PR #${sol.prNumber}`}
+                    />
                   </div>
                   <div className="flex items-center gap-4">
                     {sol.score > 0 && (
@@ -193,17 +229,17 @@ export default function BountyDetailPage() {
                       </span>
                     )}
                     <span className="font-mono text-sm text-gray-500">
-                      {sol.contributor.slice(0, 6)}...{sol.contributor.slice(-4)}
+                      {formatAddress(sol.contributor)}
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-white/[0.04]">
-                  <span className="text-xs text-gray-500">
-                    Commit:{' '}
-                    <code className="rounded-md bg-white/[0.06] px-2 py-0.5 font-mono text-xs text-gray-400">
-                      {sol.commitHash.slice(0, 8)}
-                    </code>
-                  </span>
+                <div className="mt-3 pt-3 border-t border-white/[0.04] flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Commit:</span>
+                  <GitHubLink
+                    href={githubCommitUrl(bounty.repoOwner, bounty.repoName, sol.commitHash)}
+                    label={sol.commitHash.slice(0, 8)}
+                    className="font-mono text-xs"
+                  />
                 </div>
               </div>
             ))}

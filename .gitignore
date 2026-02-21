@@ -17,6 +17,15 @@ node_modules/
 frontend/.next/
 frontend/out/
 
+# SQLite
+*.db
+
+# Test artifacts
+frontend/test-results/
+frontend/playwright-report/
+tests/e2e/report.html
+tests/e2e/report.md
+
 # OS
 .DS_Store
 

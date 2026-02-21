@@ -1,4 +1,4 @@
-.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo seed test-e2e test
+.PHONY: install contracts-build contracts-test deploy generate backend-build backend-run frontend-dev dev clean help demo seed test-e2e test test-e2e-ui test-e2e-ui-headed test-all test-stories test-stories-report test-stories-headed brochure brochure-dev brochure-open brochure-video
 
 # Default env file
 -include .env
@@ -119,7 +119,39 @@ test-e2e: ## Run Hurl E2E tests (starts anvil + backend automatically)
 	@chmod +x scripts/test-e2e.sh
 	@./scripts/test-e2e.sh
 
+test-e2e-ui: ## Run Playwright E2E tests (UI)
+	cd frontend && npx playwright test
+
+test-e2e-ui-headed: ## Run Playwright tests with browser visible
+	cd frontend && npx playwright test --headed
+
 test: contracts-test test-e2e ## Run all tests (contracts + E2E)
+
+test-all: contracts-test test-e2e test-e2e-ui ## Run all tests (contracts + backend E2E + UI E2E)
+
+test-stories: ## Run user story E2E tests with video recording
+	cd frontend && npx playwright test --project=stories
+
+test-stories-report: ## Run stories and open HTML report
+	cd frontend && npx playwright test --project=stories; cd frontend && npx playwright show-report
+
+test-stories-headed: ## Run stories with visible browser
+	cd frontend && npx playwright test --project=stories --headed
+
+brochure: ## Build live React brochure (static HTML)
+	cd frontend/brochure-app && npm run build
+	mv frontend/brochure-assets/index.html frontend/brochure-assets/gitbusters-brochure.html
+	@echo "Brochure: frontend/brochure-assets/gitbusters-brochure.html"
+
+brochure-dev: ## Start brochure dev server with HMR
+	cd frontend/brochure-app && npm run dev
+
+brochure-open: brochure ## Build and open brochure
+	open frontend/brochure-assets/gitbusters-brochure.html
+
+brochure-video: test-stories ## Generate video-based brochure (legacy)
+	node frontend/scripts/generate-brochure.js
+	@echo "Legacy brochure: frontend/brochure-assets/gitbusters-brochure.html"
 
 clean: ## Clean build artifacts
 	rm -rf contracts/out contracts/cache contracts/broadcast bin/

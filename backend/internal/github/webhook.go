@@ -58,7 +58,8 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received GitHub webhook: event=%s action=%s repo=%s",
 		eventType, payload.Action, payload.Repository.FullName)
 
-	go h.onEvent(eventType, &payload)
+	// Enqueue for sequential processing (non-blocking channel send)
+	h.onEvent(eventType, &payload)
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "ok")
