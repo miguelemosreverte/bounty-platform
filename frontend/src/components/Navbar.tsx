@@ -28,7 +28,7 @@ export function Navbar() {
   const web3Ready = useWeb3Ready();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const showAll = searchParams.get('roles') === 'all';
+  const showAll = searchParams.get('roles') !== 'agents-only';
 
   const navLinks = useMemo(
     () => allNavLinks.filter(link => !link.gated || showAll),

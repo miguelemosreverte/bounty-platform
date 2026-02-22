@@ -63,7 +63,7 @@ export default function LandingPageWrapper() {
 
 function LandingPage() {
   const searchParams = useSearchParams();
-  const showAllRoles = searchParams.get('roles') === 'all';
+  const showAllRoles = searchParams.get('roles') !== 'agents-only';
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
